@@ -21,6 +21,13 @@
 #SOFTWARE.
 
 cmake_minimum_required (VERSION 3.5)
+
+get_property(cxx_features GLOBAL PROPERTY CMAKE_CXX_KNOWN_FEATURES)
+message("Your C++ compiler supports these C++ features:")
+foreach(i ${cxx_features})
+  message("${i}")
+endforeach()
+
 project (ApertusVR)
 
 set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Semicolon separated list" FORCE)
