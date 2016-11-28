@@ -25,6 +25,16 @@
 # Win32KeyBoard.h ln 54 was edited { return KeyCode::KC_UNASSIGNED;/*TODO: Implement OS version*/; }
 # ois patch log begin
 
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGXX)
+	set (CMAKE_CXX_STANDARD 11)
+	set (CMAKE_CXX_STANDARD_REQUIRED ON)
+	set (CMAKE_CXX_EXTENSIONS OFF)
+	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+	if (UNIX)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+	endif ()
+endif ()
+
 set (OIS_HOME ${CMAKE_SOURCE_DIR}/3rdParty/ois)
 set (OIS_READY FALSE)
 
@@ -47,19 +57,27 @@ if (NOT OIS_READY)
 #build ois
 	foreach (CONF ${CMAKE_CONFIGURATION_TYPES})
 		message (STATUS "Configuring ois for ${CONF}, please wait.....")
-		execute_process ( 
+		execute_process (
 				COMMAND ${CMAKE_COMMAND} 
 				-G ${CMAKE_GENERATOR} 
 				.
 				WORKING_DIRECTORY ${OIS_HOME}
 				RESULT_VARIABLE error OUTPUT_VARIABLE output ERROR_VARIABLE output
-				)		
+				)
 		reportError (output if error)
 		message (STATUS "Building ois for ${CONF}, please wait.....")
-		execute_process ( 
-			COMMAND ${CMAKE_COMMAND} --build . --config ${CONF} --target ALL_BUILD
-			WORKING_DIRECTORY ${OIS_HOME}
-			RESULT_VARIABLE error OUTPUT_VARIABLE output ERROR_VARIABLE output)
+
+		if (WIN32)
+			execute_process (
+				COMMAND ${CMAKE_COMMAND} --build . --config ${CONF} --target ALL_BUILD
+				WORKING_DIRECTORY ${OIS_HOME}
+				RESULT_VARIABLE error OUTPUT_VARIABLE output ERROR_VARIABLE output)
+		elseif (UNIX AND NOT APPLE)
+			execute_process (
+				COMMAND ${CMAKE_COMMAND} --build . --config ${CONF} --target all
+				WORKING_DIRECTORY ${OIS_HOME}
+				RESULT_VARIABLE error OUTPUT_VARIABLE output ERROR_VARIABLE output)
+		endif ()
 		reportError (output if error)
 	endforeach ()
 endif ()
@@ -68,6 +86,8 @@ add_library(MY_OIS STATIC IMPORTED)
 if (WIN32)
 	set_property(TARGET MY_OIS PROPERTY IMPORTED_LOCATION_DEBUG ${OIS_HOME}/Debug/OIS.lib)
 	set_property(TARGET MY_OIS PROPERTY IMPORTED_LOCATION_RELEASE ${OIS_HOME}/Release/OIS.lib)
+elseif (UNIX AND NOT APPLE)
+	set_property(TARGET MY_OIS PROPERTY IMPORTED_LOCATION_RELEASE ${OIS_HOME}/libOIS.a)
 endif ()
 
 #ApeOisUserInputPlugin
@@ -94,7 +114,7 @@ target_link_libraries (ApeOisUserInputPlugin ApePluginManager ApeScene ApeEventM
 if (WIN32)
 	# we have to link to some DirectX libraries 
 	target_link_libraries (ApeOisUserInputPlugin dinput8 dxguid)
-endif ()	
+endif ()
 
 # Place target xxx into the specified folder in IDEs supporting it
 set_property (TARGET ApeOisUserInputPlugin PROPERTY FOLDER "Core/Plugins")
@@ -111,6 +131,3 @@ if (WIN32)
 		file(COPY ${OIS_HOME}/Release/OIS.lib DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/release)
 	endif()
 endif ()
-
-
-

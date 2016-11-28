@@ -305,6 +305,14 @@ if (WIN32)
 		endif ()
 
 	endif ()
+
+elseif (UNIX AND NOT APPLE)
+
+	execute_process(
+		COMMAND cmd /c cd ${NODE_SOURCE_DIR} && ./configure && make && make install
+		RESULT_VARIABLE BUILD_RESULT
+	)
+
 endif ()
 
 # TODO: build node js under unix

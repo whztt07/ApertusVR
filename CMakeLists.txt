@@ -30,6 +30,19 @@ endforeach()
 
 project (ApertusVR)
 
+# check compiler and set properties
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGXX)
+	set (CMAKE_CXX_STANDARD 11)
+	set (CMAKE_CXX_STANDARD_REQUIRED ON)
+	set (CMAKE_CXX_EXTENSIONS OFF)
+	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+	if (UNIX)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+	endif ()
+endif ()
+
+find_package(Threads)
+
 set (CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Semicolon separated list" FORCE)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -37,8 +50,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # APE Project variables
 set (APE_SOURCE_DIR "${CMAKE_SOURCE_DIR}" CACHE PATH "Source root folder" )
-set (APE_OUTPUT_DIR_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/debug)
-set (APE_OUTPUT_DIR_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/release)
+set (APE_OUTPUT_DIR_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug)
+set (APE_OUTPUT_DIR_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release)
 
 # python
 find_package(PythonInterp)
@@ -90,13 +103,27 @@ set (RAKNET_HOME ${RAKNET_SRC_DIR})
 set (RAKNET_BUILD_DIR ${RAKNET_SRC_DIR}/build)
 set (RAKNET_INSTALL_DIR ${RAKNET_SRC_DIR}/install)
 set (RAKNET_READY FALSE)
+
 #find raknet
-if(EXISTS ${RAKNET_HOME}/Lib/LibStatic/Debug/RakNetLibStatic.lib AND EXISTS ${RAKNET_HOME}/Lib/LibStatic/Release/RakNetLibStatic.lib)
-	set(RAKNET_READY TRUE)
-	message (STATUS "raknet is installed" )
-else ()
-	set(RAKNET_READY FALSE)
-	message (STATUS "raknet is not installed" )
+
+set (RAKNET_STATICLIB_PATH ${RAKNET_SRC_DIR}/Lib/LibStatic/libRakNetLibStatic.a)
+
+if (WIN32)
+	if (EXISTS ${RAKNET_HOME}/Lib/LibStatic/Debug/RakNetLibStatic.lib AND EXISTS ${RAKNET_HOME}/Lib/LibStatic/Release/RakNetLibStatic.lib)
+		set(RAKNET_READY TRUE)
+		message (STATUS "raknet is installed" )
+	else ()
+		set(RAKNET_READY FALSE)
+		message (STATUS "raknet is not installed" )
+	endif ()
+elseif (UNIX AND NOT APPLE)
+	if (EXISTS ${RAKNET_STATICLIB_PATH})
+		set(RAKNET_READY TRUE)
+		message (STATUS "raknet is installed" )
+	else ()
+		set(RAKNET_READY FALSE)
+		message (STATUS "raknet is not installed" )
+	endif ()
 endif ()
 if (NOT RAKNET_READY)
 #build raknet
@@ -116,10 +143,10 @@ if (NOT RAKNET_READY)
 				${RAKNET_SRC_DIR}
 				WORKING_DIRECTORY ${RAKNET_SRC_DIR}
 				RESULT_VARIABLE error OUTPUT_VARIABLE output ERROR_VARIABLE output
-				)		
+				)
 		reportError (output if error)
 		message (STATUS "Building raknet for ${CONF}, please wait.....")
-		execute_process ( 
+		execute_process (
 			COMMAND ${CMAKE_COMMAND} --build ${RAKNET_SRC_DIR} --config ${CONF} --target RakNetLibStatic
 			WORKING_DIRECTORY ${RAKNET_SRC_DIR}
 			RESULT_VARIABLE error OUTPUT_VARIABLE output ERROR_VARIABLE output)
@@ -128,10 +155,14 @@ if (NOT RAKNET_READY)
 endif ()
 #use raknet
 add_library(RAKNET STATIC IMPORTED)
+set(RAKNET_INCLUDE_DIR ${RAKNET_HOME}/Source)
 if (WIN32)
 	set_property(TARGET RAKNET PROPERTY IMPORTED_LOCATION_DEBUG ${RAKNET_HOME}/Lib/LibStatic/Debug/RakNetLibStatic.lib)
 	set_property(TARGET RAKNET PROPERTY IMPORTED_LOCATION_RELEASE ${RAKNET_HOME}/Lib/LibStatic/Release/RakNetLibStatic.lib)
-	set(RAKNET_INCLUDE_DIR ${RAKNET_HOME}/Source)
+elseif (UNIX AND NOT APPLE)
+	set_property(TARGET RAKNET PROPERTY IMPORTED_LOCATION_RELEASE ${RAKNET_STATICLIB_PATH})
+elseif (APPLE)
+	# TODO
 endif ()
 
 
@@ -139,34 +170,55 @@ endif ()
 set (CURL_READY FALSE)
 
 set(CURL_SOURCE_DIR ${APE_SOURCE_DIR}/3rdParty/curl)
-set(CURL_INCLUDE_DIR ${CURL_SOURCE_DIR}/include/)
+set(CURL_INCLUDE_DIR ${CURL_SOURCE_DIR}/include)
 
-set(CURL_DLL_FILENAME libcurl.dll)
-set(CURL_LIB_FILENAME libcurl_imp.lib)
+if (WIN32)
+	set(CURL_DLL_FILENAME libcurl.dll)
+	set(CURL_LIB_FILENAME libcurl_imp.lib)
 
-set(CURL_DLL_PATH_DEBUG ${CURL_SOURCE_DIR}/lib/Debug/${CURL_DLL_FILENAME})
-set(CURL_DLL_PATH_RELEASE ${CURL_SOURCE_DIR}/lib/Release/${CURL_DLL_FILENAME})
-set(CURL_DLL_OUTPUT_PATH_DEBUG ${APE_OUTPUT_DIR_DEBUG}/${CURL_DLL_FILENAME})
-set(CURL_DLL_OUTPUT_PATH_RELEASE ${APE_OUTPUT_DIR_RELEASE}/${CURL_DLL_FILENAME})
+	set(CURL_DLL_PATH_DEBUG ${CURL_SOURCE_DIR}/lib/Debug/${CURL_DLL_FILENAME})
+	set(CURL_DLL_PATH_RELEASE ${CURL_SOURCE_DIR}/lib/Release/${CURL_DLL_FILENAME})
+	set(CURL_DLL_OUTPUT_PATH_DEBUG ${APE_OUTPUT_DIR_DEBUG}/${CURL_DLL_FILENAME})
+	set(CURL_DLL_OUTPUT_PATH_RELEASE ${APE_OUTPUT_DIR_RELEASE}/${CURL_DLL_FILENAME})
 
-set(CURL_LIB_PATH_DEBUG ${CURL_SOURCE_DIR}/lib/Debug/${CURL_LIB_FILENAME})
-set(CURL_LIB_PATH_RELEASE ${CURL_SOURCE_DIR}/lib/Release/${CURL_LIB_FILENAME})
-set(CURL_LIB_OUTPUT_PATH_DEBUG ${APE_OUTPUT_DIR_DEBUG}/${CURL_LIB_FILENAME})
-set(CURL_LIB_OUTPUT_PATH_RELEASE ${APE_OUTPUT_DIR_RELEASE}/${CURL_LIB_FILENAME})
+	set(CURL_LIB_PATH_DEBUG ${CURL_SOURCE_DIR}/lib/Debug/${CURL_LIB_FILENAME})
+	set(CURL_LIB_PATH_RELEASE ${CURL_SOURCE_DIR}/lib/Release/${CURL_LIB_FILENAME})
+	set(CURL_LIB_OUTPUT_PATH_DEBUG ${APE_OUTPUT_DIR_DEBUG}/${CURL_LIB_FILENAME})
+	set(CURL_LIB_OUTPUT_PATH_RELEASE ${APE_OUTPUT_DIR_RELEASE}/${CURL_LIB_FILENAME})
+elseif (UNIX AND NOT APPLE)
+	set(CURL_DLL_FILENAME libcurl.so)
+	set(CURL_LIB_FILENAME libcurl.a)
 
-if (EXISTS ${CURL_LIB_PATH_DEBUG} AND EXISTS ${CURL_DLL_PATH_RELEASE})
-	set(CURL_READY TRUE)
-	message(STATUS "curl is installed" )
-else ()
-	set(CURL_READY FALSE)
-	message(STATUS "curl is not installed" )
+	set(USR_LIB_PATH /usr/lib/x86_64-linux-gnu)
+	set(CURL_DLL_PATH_RELEASE ${USR_LIB_PATH}/${CURL_DLL_FILENAME})
+	message(STATUS "CURL_DLL_PATH_RELEASE: ${CURL_DLL_PATH_RELEASE}")
+	set(CURL_DLL_OUTPUT_PATH_RELEASE ${APE_OUTPUT_DIR_RELEASE}/${CURL_DLL_FILENAME})
+	message(STATUS "CURL_DLL_OUTPUT_PATH_RELEASE: ${CURL_DLL_OUTPUT_PATH_RELEASE}")
+
+	set(CURL_LIB_PATH_RELEASE /usr/lib/x86_64-linux-gnu/${CURL_LIB_FILENAME})
+	message(STATUS "CURL_LIB_PATH_RELEASE: ${CURL_LIB_PATH_RELEASE}")
+	set(CURL_LIB_OUTPUT_PATH_RELEASE /usr/lib/x86_64-linux-gnu/${CURL_LIB_FILENAME})
+	message(STATUS "CURL_LIB_OUTPUT_PATH_RELEASE: ${CURL_LIB_OUTPUT_PATH_RELEASE}")
 endif ()
+
+
+# if (EXISTS ${CURL_LIB_PATH_RELEASE} AND EXISTS ${CURL_DLL_PATH_RELEASE})
+# 	set(CURL_READY TRUE)
+# 	message(STATUS "curl release is installed" )
+# elseif (EXISTS ${CURL_LIB_PATH_DEBUG} AND EXISTS ${CURL_DLL_PATH_DEBUG})
+# 	set(CURL_READY TRUE)
+# 	message(STATUS "curl debug is installed" )
+# else ()
+# 	set(CURL_READY FALSE)
+# 	message(STATUS "curl is not installed" )
+# endif ()
 if (NOT CURL_READY)
 #build curl
 	foreach (CONF ${CMAKE_CONFIGURATION_TYPES})
 		message(STATUS "Configuring curl for ${CONF}, please wait.....")
 		execute_process(
 				COMMAND ${CMAKE_COMMAND}
+				-DCMAKE_VERBOSE_MAKEFILE=ON
 				-G ${CMAKE_GENERATOR}
 				.
 				WORKING_DIRECTORY ${CURL_SOURCE_DIR}
@@ -175,53 +227,82 @@ if (NOT CURL_READY)
 		reportError(output if error)
 		message(STATUS "Building curl for ${CONF}, please wait.....")
 		execute_process(
-			COMMAND ${CMAKE_COMMAND} --build . --config ${CONF} --target ALL_BUILD
+			COMMAND ${CMAKE_COMMAND} -DCMAKE_VERBOSE_MAKEFILE=ON --build . --config ${CONF} --target ALL_BUILD
 			WORKING_DIRECTORY ${CURL_SOURCE_DIR}
 			RESULT_VARIABLE error OUTPUT_VARIABLE output ERROR_VARIABLE output)
 		reportError(output if error)
 	endforeach ()
 endif ()
+
 #use curl
+
 add_library(MY_CURL STATIC IMPORTED)
+
 if (WIN32)
     set_property(TARGET MY_CURL PROPERTY IMPORTED_LOCATION_DEBUG ${CURL_LIB_PATH_DEBUG})
     set_property(TARGET MY_CURL PROPERTY IMPORTED_LOCATION_RELEASE ${CURL_LIB_PATH_RELEASE})
+elseif (UNIX AND NOT APPLE)
+	set_property(TARGET MY_CURL PROPERTY IMPORTED_LOCATION_RELEASE ${CURL_LIB_PATH_RELEASE})
+elseif (APPLE)
+	# TODO
 endif ()
 
-if (NOT EXISTS ${CURL_DLL_PATH_DEBUG})
-	message(FATAL_ERROR "Could not find ${CURL_DLL_PATH_DEBUG}")
-endif ()
-if (NOT EXISTS ${CURL_DLL_OUTPUT_PATH_DEBUG})
-	file(COPY ${CURL_DLL_PATH_DEBUG} DESTINATION ${APE_OUTPUT_DIR_DEBUG})
-else ()
-	message(STATUS "curl: ${CURL_DLL_OUTPUT_PATH_DEBUG} already exists. Skipping copy.")
-endif ()
+if (WIN32)
 
-if (NOT EXISTS ${CURL_DLL_PATH_RELEASE})
-	message(FATAL_ERROR "Could not find ${CURL_DLL_PATH_RELEASE}")
-endif ()
-if (NOT EXISTS ${CURL_DLL_OUTPUT_PATH_RELASE})
-	file(COPY ${CURL_DLL_PATH_RELEASE} DESTINATION ${APE_OUTPUT_DIR_RELEASE})
-else ()
-	message(STATUS "curl: ${CURL_DLL_OUTPUT_PATH_RELEASE} already exists. Skipping copy.")
-endif ()
+	if (NOT EXISTS ${CURL_DLL_PATH_DEBUG})
+		message(FATAL_ERROR "Could not find ${CURL_DLL_PATH_DEBUG}")
+	endif ()
+	if (NOT EXISTS ${CURL_DLL_OUTPUT_PATH_DEBUG})
+		file(COPY ${CURL_DLL_PATH_DEBUG} DESTINATION ${APE_OUTPUT_DIR_DEBUG})
+	else ()
+		message(STATUS "curl: ${CURL_DLL_OUTPUT_PATH_DEBUG} already exists. Skipping copy.")
+	endif ()
 
-if (NOT EXISTS ${CURL_LIB_PATH_DEBUG})
-	message(FATAL_ERROR "Could not find ${CURL_LIB_PATH_DEBUG}")
-endif ()
-if (NOT EXISTS ${CURL_LIB_OUTPUT_PATH_DEBUG})
-	file(COPY ${CURL_LIB_PATH_DEBUG} DESTINATION ${APE_OUTPUT_DIR_DEBUG})
-else ()
-	message(STATUS "curl: ${CURL_LIB_OUTPUT_PATH_DEBUG} already exists. Skipping copy.")
-endif ()
+	if (NOT EXISTS ${CURL_DLL_PATH_RELEASE})
+		message(FATAL_ERROR "Could not find ${CURL_DLL_PATH_RELEASE}")
+	endif ()
+	if (NOT EXISTS ${CURL_DLL_OUTPUT_PATH_RELEASE})
+		file(COPY ${CURL_DLL_PATH_RELEASE} DESTINATION ${APE_OUTPUT_DIR_RELEASE})
+	else ()
+		message(STATUS "curl: ${CURL_DLL_OUTPUT_PATH_RELEASE} already exists. Skipping copy.")
+	endif ()
 
-if (NOT EXISTS ${CURL_LIB_PATH_RELEASE})
-	message(FATAL_ERROR "Could not find ${CURL_LIB_PATH_RELEASE}")
-endif ()
-if (NOT EXISTS ${CURL_LIB_OUTPUT_PATH_RELEASE})
-	file(COPY ${CURL_LIB_PATH_RELEASE} DESTINATION ${APE_OUTPUT_DIR_RELEASE})
-else ()
-	message(STATUS "curl: ${CURL_LIB_OUTPUT_PATH_RELEASE} already exists. Skipping copy.")
+	if (NOT EXISTS ${CURL_LIB_PATH_DEBUG})
+		message(FATAL_ERROR "Could not find ${CURL_LIB_PATH_DEBUG}")
+	endif ()
+	if (NOT EXISTS ${CURL_LIB_OUTPUT_PATH_DEBUG})
+		file(COPY ${CURL_LIB_PATH_DEBUG} DESTINATION ${APE_OUTPUT_DIR_DEBUG})
+	else ()
+		message(STATUS "curl: ${CURL_LIB_OUTPUT_PATH_DEBUG} already exists. Skipping copy.")
+	endif ()
+
+	if (NOT EXISTS ${CURL_LIB_PATH_RELEASE})
+		message(FATAL_ERROR "Could not find ${CURL_LIB_PATH_RELEASE}")
+	endif ()
+	if (NOT EXISTS ${CURL_LIB_OUTPUT_PATH_RELEASE})
+		file(COPY ${CURL_LIB_PATH_RELEASE} DESTINATION ${APE_OUTPUT_DIR_RELEASE})
+	else ()
+		message(STATUS "curl: ${CURL_LIB_OUTPUT_PATH_RELEASE} already exists. Skipping copy.")
+	endif ()
+
+elseif (UNIX AND NOT APPLE)
+
+	if (NOT EXISTS ${CURL_DLL_PATH_RELEASE})
+		message(FATAL_ERROR "Could not find ${CURL_DLL_PATH_RELEASE}")
+	endif ()
+	if (NOT EXISTS ${CURL_DLL_OUTPUT_PATH_RELEASE})
+		message(STATUS "curl: ${CURL_DLL_OUTPUT_PATH_RELEASE} does not exist. Starting copy...")
+		message(STATUS "${CURL_DLL_PATH_RELEASE}")
+		message(STATUS "${APE_OUTPUT_DIR_RELEASE}")
+		execute_process(COMMAND "cp -Lr" ${CURL_DLL_PATH_RELEASE} ${APE_OUTPUT_DIR_RELEASE}
+						RESULT_VARIABLE result
+						ERROR_VARIABLE error)
+		message(STATUS "result: ${result}")
+		message(STATUS "error: ${error}")
+	else ()
+		message(STATUS "curl: ${CURL_DLL_OUTPUT_PATH_RELEASE} already exists. Skipping copy.")
+	endif ()
+
 endif ()
 
 

@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 2.6)
 
 project(RakNet)
 
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGXX)
+	set (CMAKE_CXX_STANDARD 11)
+	set (CMAKE_CXX_STANDARD_REQUIRED ON)
+	set (CMAKE_CXX_EXTENSIONS OFF)
+	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+	if (UNIX)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+	endif ()
+endif ()
+
 if( NOT APPLE )
 # check 64 bit
 if( CMAKE_SIZEOF_VOID_P MATCHES "4" )
