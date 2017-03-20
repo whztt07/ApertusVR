@@ -83,6 +83,7 @@ namespace Ape
 				this->orientation = orientation;
 			}
 		};
+
 		OIS::Keyboard* mpKeyboard; 
 
 		OIS::Mouse* mpMouse;
@@ -97,7 +98,13 @@ namespace Ape
 
 		Ape::NodeWeakPtr mUserNode;
 
+		Ape::TextGeometryWeakPtr mConsoleText;
+
 		std::map<OIS::KeyCode, bool> mKeyCodeMap;
+
+		std::string mConsoleStr;
+
+		bool mToggleConsole;
 
 		std::vector<UserNodePose> mUserNodePoses;
 

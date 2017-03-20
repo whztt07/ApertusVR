@@ -58,6 +58,8 @@ Ape::OISUserInputPlugin::OISUserInputPlugin()
 
 	mUserNodePosesToggleIndex = 0;
 	mIsKeyPressed = false;
+	mToggleConsole = false;
+	mConsoleStr = "";
 }
 
 Ape::OISUserInputPlugin::~OISUserInputPlugin()
@@ -72,8 +74,17 @@ void Ape::OISUserInputPlugin::eventCallBack(const Ape::Event& event)
 {
 	if (event.type == Ape::Event::Type::CAMERA_CREATE)
 	{
+		std::cout << "mUserNode name: " << mUserNode.lock()->getName() << std::endl;
+
 		if (auto camera = std::static_pointer_cast<Ape::ICamera>(mpScene->getEntity(event.subjectName).lock()))
 			camera->setParentNode(mUserNode);
+
+		mConsoleText = std::static_pointer_cast<Ape::ITextGeometry>(mpScene->createEntity("consoleText", Ape::Entity::Type::GEOMETRY_TEXT).lock());
+		if (mConsoleText.lock())
+		{
+			mConsoleText.lock()->setParentNode(mUserNode);
+			mConsoleText.lock()->setOffset(Ape::Vector3(0, -25, -70));
+		}
 	}
 }
 
@@ -168,10 +179,43 @@ bool Ape::OISUserInputPlugin::keyPressed(const OIS::KeyEvent& e)
 	auto userNode = mUserNode.lock();
 	if (userNode)
 	{
-		if (mKeyCodeMap[OIS::KeyCode::KC_C])
-			saveUserNodePose(userNode);
-		if (mKeyCodeMap[OIS::KeyCode::KC_SPACE])
-			toggleUserNodePoses(userNode);
+		if (mToggleConsole && mKeyCodeMap[OIS::KeyCode::KC_TAB] == false)
+		{
+			if (mKeyCodeMap[OIS::KeyCode::KC_RETURN])
+			{
+				std::cout << "console> command: " << mConsoleStr << std::endl;
+				mConsoleStr.clear();
+				mConsoleText.lock()->clearCaption();
+			}
+			else if (mKeyCodeMap[OIS::KeyCode::KC_BACK])
+			{
+				if (!mConsoleStr.empty())
+					mConsoleStr.erase(std::prev(mConsoleStr.end()));
+				else
+					mConsoleText.lock()->clearCaption();
+			}
+			else
+			{
+				char c = e.text;
+				std::string charStr(&c);
+				mConsoleStr += charStr.at(0);
+			}
+			mConsoleText.lock()->setCaption(mConsoleStr);
+		}
+		else
+		{
+			if (mKeyCodeMap[OIS::KeyCode::KC_C])
+				saveUserNodePose(userNode);
+			if (mKeyCodeMap[OIS::KeyCode::KC_SPACE])
+				toggleUserNodePoses(userNode);
+			if (mKeyCodeMap[OIS::KeyCode::KC_TAB])
+			{
+				mToggleConsole = !mToggleConsole;
+				std::cout << "console> switched mode: " << mToggleConsole << std::endl;
+				mConsoleStr.clear();
+				mConsoleText.lock()->clearCaption();
+			}
+		}
 	}
 	return true;
 }
@@ -256,7 +300,8 @@ void Ape::OISUserInputPlugin::Run()
 			mpKeyboard->capture();
 		else if (mpMouse)
 			mpMouse->capture();
-		moveUserNode();
+		if (!mToggleConsole)
+			moveUserNode();
 		std::this_thread::sleep_for (std::chrono::milliseconds(20));
 	}
 	mpEventManager->disconnectEvent(Ape::Event::Group::CAMERA, std::bind(&OISUserInputPlugin::eventCallBack, this, std::placeholders::_1));
