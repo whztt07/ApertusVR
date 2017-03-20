@@ -41,6 +41,8 @@ namespace Ape
 		std::string getCaption() override;
 		
 		void setCaption(std::string caption) override;
+
+		void clearCaption() override;
 		
 		bool isVisible() override;
 		
