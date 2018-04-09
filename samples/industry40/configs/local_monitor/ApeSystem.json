@@ -4,9 +4,9 @@
         "creator": "ApeOgreRenderPlugin"
     },
     "sceneSession": {
-        "participantType": "Local",
-        "uniqueUserNamePrefix": "",
-        "sessionGUID": "UNASSIGNED_RAKNET_GUID",
+        "participantType": "Guest",
+        "uniqueUserNamePrefix": "CAVE",
+        "sessionGUID": "72058282093354037",
         "sessionResourceLocation": [
             "/plugins/industry40/resources"
         ],
@@ -25,7 +25,8 @@
         "plugins": [
             "ApeNodeJsPlugin",
             "ApeOgreRenderPlugin",
-            "ApeIndustry40Plugin"
+            "ApeIndustry40Plugin",
+	    "ApeOisUserInputPlugin"
         ]
     }
 }
