@@ -25,7 +25,8 @@ void Ape::ApeWebserverPlugin::eventCallBack(const Ape::Event& ev)
 		respJson["group"] = ev.group;
 		respJson["type"] = ev.type;
 		respJson["subjectName"] = ev.subjectName;
-		u->send_text(crow::json::dump(respJson));
+		if (ev.subjectName.find_first_of("rayNode") == std::string::npos) // filter out RayNode's setPosition
+			u->send_text(crow::json::dump(respJson));
 	}
 }
 
