@@ -81,6 +81,7 @@ set (HEADERS
 	ApeIPointCloud.h
 	ApeFileSystem.h
 	ApePlatform.h
+	ApeISelection.h
 	)
 
 add_custom_target(
