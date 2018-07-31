@@ -55,6 +55,7 @@ set(HEADERS
 	session/ApeReplicaManager.h
 	session/ApeLobbyManager.h
 	session/ApeHttpManager.h
+	3DUI/RadioButton/ApeRadioButtonImpl.h
 	)
 
 set(SOURCES
@@ -90,6 +91,7 @@ set(SOURCES
 	session/ApeReplicaManager.cpp
 	session/ApeLobbyManager.cpp
 	session/ApeHttpManager.cpp
+	3DUI/RadioButton/ApeRadioButtonImpl.cpp
 	)
 
 include_directories(
