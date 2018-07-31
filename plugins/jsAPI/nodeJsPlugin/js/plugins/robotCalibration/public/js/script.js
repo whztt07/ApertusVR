@@ -1,10 +1,10 @@
 var apiEndPoint = 'http://localhost:3000/api/v1/';
 var apiEndPointNode = apiEndPoint + 'nodes/';
 var apiEndPointFileGeometries = apiEndPoint + 'filegeometries/';
-var nodeName = '(null)_137';
+var nodeName = 'STL_BINARY_1';
 
 function enableEditor(val) {
-    $("body *").attr("disabled", !val);
+    //$("body *").attr("disabled", !val);
 }
 
 function getNodePosition(nodeName) {
