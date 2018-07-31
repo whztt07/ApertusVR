@@ -234,6 +234,56 @@ void Ape::ApeRobotCalibrationPlugin::Init()
 		}
 	}
 
+
+
+	// cylinder
+	{
+		Ape::ManualMaterialSharedPtr cylinderMat;
+		if (cylinderMat = std::static_pointer_cast<Ape::IManualMaterial>(mpScene->createEntity("cylinderMaterial", Ape::Entity::MATERIAL_MANUAL).lock()))
+		{
+			if (auto cylinderMatManPass = std::static_pointer_cast<Ape::IManualPass>(mpScene->createEntity("cylinderMaterialManualPass", Ape::Entity::PASS_MANUAL).lock()))
+			{
+				cylinderMatManPass->setShininess(15.0f);
+				cylinderMatManPass->setDiffuseColor(Ape::Color(0.0f, 1.0f, 0.0f));
+				cylinderMatManPass->setSpecularColor(Ape::Color(0.0f, 1.0f, 0.0f));
+				cylinderMat->setPass(cylinderMatManPass);
+			}
+		}
+
+		Ape::ManualMaterialSharedPtr cylinderMatInner;
+		if (cylinderMatInner = std::static_pointer_cast<Ape::IManualMaterial>(mpScene->createEntity("cylinderMaterialInner", Ape::Entity::MATERIAL_MANUAL).lock()))
+		{
+			if (auto cylinderMatManPass = std::static_pointer_cast<Ape::IManualPass>(mpScene->createEntity("cylinderMaterialManualPassInner", Ape::Entity::PASS_MANUAL).lock()))
+			{
+				cylinderMatManPass->setShininess(15.0f);
+				cylinderMatManPass->setDiffuseColor(Ape::Color(0.0f, 0.0f, 1.0f));
+				cylinderMatManPass->setSpecularColor(Ape::Color(0.0f, 0.0f, 1.0f));
+				cylinderMatInner->setPass(cylinderMatManPass);
+			}
+		}
+
+		Ape::NodeSharedPtr cylinderNode;
+		if (cylinderNode = mpScene->createNode("cylinderNode").lock())
+		{
+			cylinderNode->setPosition(Ape::Vector3(150, 0, 0));
+			cylinderNode->rotate(Ape::Degree(90).toRadian(), Ape::Vector3(0, 0, 1), Ape::Node::TransformationSpace::LOCAL);
+		}
+
+		if (auto cylinder = std::static_pointer_cast<Ape::ICylinderGeometry>(mpScene->createEntity("cylinder", Ape::Entity::GEOMETRY_CYLINDER).lock()))
+		{
+			cylinder->setParameters(3, 1, 100);
+			cylinder->setParentNode(cylinderNode);
+			cylinder->setMaterial(cylinderMat);
+		}
+
+		if (auto cylinderInner = std::static_pointer_cast<Ape::ICylinderGeometry>(mpScene->createEntity("cylinderInner", Ape::Entity::GEOMETRY_CYLINDER).lock()))
+		{
+			cylinderInner->setParameters(2, 2, 10);
+			cylinderInner->setParentNode(cylinderNode);
+			cylinderInner->setMaterial(cylinderMatInner);
+		}
+	}
+
 	/*overlay begin*/
 	if (auto browser = std::static_pointer_cast<Ape::IBrowser>(mpScene->createEntity("overlay_frame", Ape::Entity::BROWSER).lock()))
 	{

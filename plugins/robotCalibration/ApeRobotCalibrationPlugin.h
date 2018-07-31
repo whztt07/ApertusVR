@@ -43,6 +43,7 @@ SOFTWARE.*/
 #include "ApeIFileMaterial.h"
 #include "ApeIPlaneGeometry.h"
 #include "ApeITubeGeometry.h"
+#include "ApeICylinderGeometry.h"
 #include "ApeIConeGeometry.h"
 #include "ApeISphereGeometry.h"
 #include "ApeITextGeometry.h"
