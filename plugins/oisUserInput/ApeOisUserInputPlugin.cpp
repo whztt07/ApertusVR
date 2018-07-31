@@ -108,12 +108,7 @@ void Ape::OISUserInputPlugin::eventCallBack(const Ape::Event& event)
 						if (auto selectedParentNode = geometry->getParentNode().lock())
 						{
 							LOG(LOG_TYPE_DEBUG, "GEOMETRY_RAY_INTERSECTION: parentNode: " << selectedParentNode->getName());
-							if (!mKeyCodeMap[OIS::KeyCode::KC_LCONTROL] && !mKeyCodeMap[OIS::KeyCode::KC_RCONTROL])
-							{
-								clearNodeSelection();
-								addNodeSelection(selectedParentNode->getName());
-							}
-							else
+							if (mKeyCodeMap[OIS::KeyCode::KC_LCONTROL] || mKeyCodeMap[OIS::KeyCode::KC_RCONTROL])
 							{
 								if (isNodeSelected(selectedParentNode->getName()))
 									removeNodeSelection(selectedParentNode->getName());
@@ -425,7 +420,7 @@ bool Ape::OISUserInputPlugin::mouseReleased(const OIS::MouseEvent& e, OIS::Mouse
 
 		if (!mMouseState.isDragModeLeft)
 		{
-			/*if (!mKeyCodeMap[OIS::KeyCode::KC_LCONTROL] && !mKeyCodeMap[OIS::KeyCode::KC_RCONTROL])
+			/*if (mKeyCodeMap[OIS::KeyCode::KC_LCONTROL] || mKeyCodeMap[OIS::KeyCode::KC_RCONTROL])
 			{
 				clearNodeSelection();
 			}*/
